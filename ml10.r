@@ -38,3 +38,24 @@ correct_count <- sum(correct)
 correct_count   # SVM 모델이 문자들을 제대로 구분한 갯수
 correct_ratio <- correct_count / 4000
 correct_ratio   # 약 0.84 정답률 
+
+# 5. 모델 수정 -> 재평가 -> 성능 개선
+classifier2 <- ksvm(letter ~ ., 
+                    data = letters_train,
+                    kernel = "rbfdot")
+
+
+predict2 <- predict(classifier2, letters_test)
+head(predict2, n = 10)
+head(letters_test$letter, n = 10)
+
+table(predict2, letters_test$letter)
+
+correct2 <- ifelse(predict2 == letters_test$letter, 1, 0)
+correct2_count <- sum(correct2)
+correct2_count
+correct2_ratio <- correct2_count / 4000
+correct2_ratio
+
+table()
+
