@@ -82,6 +82,10 @@ sms_knn_roc <- roc(response = sms_results$actual_type,
                predictor = sms_knn$p_spam)
 plot(sms_knn_roc, col = "red", lwd = 3, add = T)
 
+# AUC: Area Under the Curve
+auc(sms_roc)
+auc(sms_knn_roc)
+
 # k-fold CV(Cross Validation, 교차 검증)
 # caret::createFolds()
 
