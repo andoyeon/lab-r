@@ -1,31 +1,33 @@
 ---
-title: "R Movie Prediction"
+title: "test"
 author: "AN DoYeon"
 date: '2019 10 29 '
 output: html_document
 ---
-  
-  ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## 1. 데이터 준비, 확인
+# Movie Score Prediction
+
+
+## 1. 데이터 확인
 ```{r}
 USA_movie <- read.csv("USA_movie.csv")
 movie <- USA_movie
 str(movie)
 summary(movie)
+
 ```
 
 ## 2. 데이터 전처리
-###    1) 결측치 처리 => 평균으로 대치
+
+### 결측치 처리 => 평균으로 대치
 ```{r}
 sum(is.na(movie))
 1334 / (3807*28)
+
 ```
 
 ```{r}
@@ -69,26 +71,35 @@ movie$actor_2_facebook_likes <- ifelse(is.na(movie$actor_2_facebook_likes),
 
 avg_aspect_ratio <- mean(movie$aspect_ratio, na.rm = T)
 movie$aspect_ratio <- ifelse(is.na(movie$aspect_ratio), avg_aspect_ratio, movie$aspect_ratio)
+
 ```
 
+
+
+
 ## 3. 상관 관계 파악
-###    1) IMDB 분포도
+### 1) IMDB 분포도
 ```{r}
 library(ggplot2)
 ggplot(data = movie, mapping = aes(x = imdb_score)) +
   geom_bar(fill = "#FFCC00") +
   theme_light()
+
 ```
 
-###    2) Heatmap 
-변수들 간의 상관 관계 파악 - heatmap으로 시각화
 
-숫자형이고, 의미 있는 변수들로만 이루어진 데이터 프레임 생성
+### 2) Correlation Heatmap
+ 변수들 간의 상관 관계 파악
+
+
+ 숫자형이고, 의미 있는 변수들로만 이루어진 데이터 프레임 생성
+ 
 ```{r}
 movie_data <- movie[c("num_critic_for_reviews", "duration", "director_facebook_likes",
                       "actor_3_facebook_likes", "actor_1_facebook_likes", "gross", "num_voted_users",
                       "cast_total_facebook_likes", "facenumber_in_poster", "num_user_for_reviews",
                       "budget", "actor_2_facebook_likes","imdb_score", "movie_facebook_likes")]
+
 
 # 변수 수정 및 삭제
 movie_data$other_actors_facebook_likes <- movie_data$actor_2_facebook_likes + movie_data$actor_3_facebook_likes
@@ -96,6 +107,8 @@ movie_data <- subset(movie_data, select = -c(cast_total_facebook_likes, actor_2_
 
 ```
 
+
+ Correlation Heatmap
 
 ```{r}
 cormat <- round(cor(movie_data), 2)
@@ -107,11 +120,7 @@ library(reshape2)
 melted_cormat <- melt(cormat)
 head(melted_cormat)
 
-# Get lower triangle of the correlation matrix
-get_lower_tri<-function(cormat){
-  cormat[upper.tri(cormat)] <- NA
-  return(cormat)
-}
+
 # Get upper triangle of the correlation matrix
 get_upper_tri <- function(cormat){
   cormat[lower.tri(cormat)]<- NA
@@ -148,20 +157,24 @@ ggheatmap <- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
   coord_fixed()
 # Print the heatmap
 print(ggheatmap)
+
 ```
 
 
-###    3) IMDB score와 관련 있는 변수들로 이루어진 데이터 프레임 생성
+### 3) IMDB score와 관련 있는 변수들로 이루어진 데이터 프레임 생성
 ```{r}
 movie <- movie_data[c("facenumber_in_poster", "director_facebook_likes", "duration", "imdb_score",
                       "actor_1_facebook_likes", "other_actors_facebook_likes", "movie_facebook_likes",
                       "budget")]
+
 ```
 
 
 
+
 ## 4. 머신러닝
-###    1) 다중 선형 회귀(Multiple Linear Regression)
+
+### 1) 다중 선형 회귀(Multiple Linear Regression)
 ```{r}
 # 다중 선형 회귀
 # 종속 변수 - imdb_score
@@ -178,10 +191,10 @@ pairs.panels(movie)
 library(car)
 vif(lm(imdb_score ~ ., data = movie))
 # vif 값은 보통 4가 넘으면 다중공선성이 존재한다고 본다.
+
 ```
 
 => 다중공선성 존재하지 않음
-
 
 ```{r}
 # 회귀 모델
@@ -198,13 +211,15 @@ mov_model2 <- step(out, direction = "backward", trace = T)
 summary(mov_model2)
 
 plot(mov_model2)  # 모델이 적합한지
-# 이상치가 많음
+
+
 ```
 
+=> 이상치가 많음
 
-###    2) 회귀 트리
+
+### 2) 회귀 트리
 ```{r}
-
 library(rpart)
 
 sample_count <- round(nrow(movie)) * 0.75
@@ -229,35 +244,53 @@ summary(test$imdb_score)
 
 # 모델 성능 평가
 # 1) 상관 계수
-cor(movie_predict, test$imdb_score)
+cor(movie_predict, test$imdb_score)   # 0.45
 # 2) MAE: 평균 절대 오차
 MAE <- function(actual, predict) {
   return(mean(abs(actual - predict)))
 }
-MAE(actual = test$imdb_score, predict = movie_predict)
+MAE(actual = test$imdb_score, predict = movie_predict)    # 0.76
 
 ```
 
 
-###    3) 모델 트리
+### 3) 모델 트리
 ```{r}
 # 모델 성능 향상
-# 모델 트리
 library(Cubist)
-movie_cubist <- cubist(x = train[-6], y = train$imdb_score)
+str(movie)
+# 모델 트리
+movie_cubist <- cubist(x = movie[-4], y = movie$imdb_score)
 movie_cubist
+summary(movie_cubist)
 
-
-# 모델 트리 성능 테스트
+# 성능 테스트
 movie_predict2 <- predict(movie_cubist, test)
 head(movie_predict2)
-summary(movie_predict2)
-summary(test$imdb_score)
 
-# 모델 성능 평가
-# 1) 상관 계수
-cor(movie_predict2, test$imdb_score)  # 0.469
-# 2) MAE
-MAE(actual = test$imdb_score, predict = movie_predict2) # 0.736
+summary(movie_predict2)
+summary(movie$imdb_score)
+
+# 상관계수
+cor(movie_predict2, test$imdb_score)  # 0.55
+# MAE
+MAE(movie_predict2, test$imdb_score)  # 0.68
+
+```
+
+=> 상관계수는 0.1 높아졌고, MAE는 0.8 낮아짐
+=> 성능 향상
+
+
+### 4) 랜덤 포레스트(Random Forest Classification)
+```{r}
+library(randomForest)
+
+set.seed(123)
+mov_model3 <- randomForest(imdb_score ~ ., data = movie, importance = T)
+print(mov_model3)
+
+importance(mov_model3)
+varImpPlot(mov_model3)
 ```
 
