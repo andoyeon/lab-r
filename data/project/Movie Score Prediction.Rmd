@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,comment=NA)
 ```
 
 # Movie Score Prediction
@@ -183,12 +183,13 @@ movie <- movie_data[c("facenumber_in_poster", "director_facebook_likes", "durati
 hist(movie$imdb_score, col = "#FFCC00", border = "white")
 
 
-# 산점 행렬도
 library(psych)
+# 산점 행렬도
 pairs.panels(movie)
+
+library(car)
 # 다중공선성 확인
 # 다중공선성: 독립변수들이 서로 높은 상관관계를 가지면 회귀계수의 정확한 추정이 어렵다.
-library(car)
 vif(lm(imdb_score ~ ., data = movie))
 # vif 값은 보통 4가 넘으면 다중공선성이 존재한다고 본다.
 

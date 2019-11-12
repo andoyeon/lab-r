@@ -1,0 +1,24 @@
+rm(list=ls())
+load("data/project/movie.rda")
+# IMDB score에 영향력 top3 변수
+# duration
+# 감독 이름 , 좋아요 수
+# 영화 좋아요 수
+
+search()
+library(ggplot2)
+str(movie)
+summary(movie[c("director_name", "duration", "director_facebook_likes", "movie_facebook_likes")])
+
+# duration
+ggplot(movie, aes(duration, imdb_score)) +
+  geom_col(col = "#FFCC00")
+
+# 감독 좋아요 수
+ggplot(data = movie, mapping = aes(x = director_facebook_likes, y = imdb_score,
+                                   color = color)) +
+  geom_point()
+
+# 영화 좋아요 수
+ggplot(movie, aes(x=movie_facebook_likes, y=imdb_score, color = language)) +
+  geom_point()
